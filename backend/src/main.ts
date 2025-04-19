@@ -15,7 +15,10 @@ async function bootstrap() {
 
   // Enable CORS
   app.enableCors({
-    origin: ['https://jamoveo-frontend.onrender.com', 'http://localhost:5173'],
+    origin: [
+      'https://jamoveo-frontend-9zh9.onrender.com',
+      'http://localhost:5173',
+    ],
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
     credentials: true,
     allowedHeaders: 'Content-Type, Authorization,Accept',
