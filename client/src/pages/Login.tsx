@@ -109,6 +109,11 @@ const Login: React.FC = () => {
       });
   };
 
+  const handleForgotPassword = (e: React.MouseEvent) => {
+    e.preventDefault(); // Prevent form submission
+    alert("Forgot password flow");
+  };
+
   const toggleShowPassword = () => setShowPassword((show) => !show);
 
   return (
@@ -180,8 +185,9 @@ const Login: React.FC = () => {
           />
           <Typography
             variant="body2"
-            component="button"
-            onClick={() => alert("Forgot password flow")}
+            component="a"
+            href="#"
+            onClick={handleForgotPassword}
             sx={{
               backgroundColor: "transparent",
               border: "none",

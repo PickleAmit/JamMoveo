@@ -87,8 +87,8 @@ const AuthLayout: React.FC<AuthLayoutProps> = ({ children }) => {
               position: "absolute",
               bottom: 32,
               right: 32,
-              width: "10dvw",
-              height: "8dvh",
+              width: "15em",
+              height: "5em",
               p: 1,
             }}
           />

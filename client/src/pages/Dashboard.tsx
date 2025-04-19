@@ -135,6 +135,7 @@ const Dashboard: React.FC = () => {
             transition: "all 0.3s ease",
             display: "flex",
             flex: 1,
+            maxHeight: "85dvh",
             flexDirection: "column",
             overflow: "hidden",
           }}
