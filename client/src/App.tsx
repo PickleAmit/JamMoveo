@@ -1,6 +1,6 @@
 import React, { useEffect } from "react";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-import { useAppDispatch } from "./store/hooks";
+import { useAppDispatch, useAppSelector } from "./store/hooks";
 import { fetchCurrentUser } from "./store/slices/authSlice";
 
 // Pages
@@ -15,6 +15,17 @@ import ProtectedRoute from "./components/routing/ProtectedRoute";
 
 const App: React.FC = () => {
   const dispatch = useAppDispatch();
+  const isPlaying = useAppSelector((state) => state.song.isPlaying);
+  const isMobileView = useAppSelector((state) => state.ui.isMobileView);
+
+  // Add body class when song is playing (for better mobile scrolling control)
+  useEffect(() => {
+    if (isMobileView && isPlaying) {
+      document.body.classList.add("song-playing");
+    } else {
+      document.body.classList.remove("song-playing");
+    }
+  }, [isPlaying, isMobileView]);
 
   useEffect(() => {
     // Check if we have stored credentials

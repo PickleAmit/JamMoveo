@@ -2,7 +2,6 @@ import React, { useEffect, useRef, useState } from "react";
 import { Box, Typography } from "@mui/material";
 import { useAppSelector } from "../store/hooks";
 
-// Define interfaces to match your JSON structure
 interface LyricChordItem {
   lyrics: string;
   chords?: string;
@@ -14,7 +13,6 @@ interface LyricsDisplayProps {
   scrollSpeed?: number;
   userRole?: string;
   language?: "hebrew" | "english";
-  containerRef?: React.RefObject<HTMLDivElement | null>; // Fixed type
 }
 
 const LyricsDisplay: React.FC<LyricsDisplayProps> = ({
@@ -23,38 +21,34 @@ const LyricsDisplay: React.FC<LyricsDisplayProps> = ({
   scrollSpeed = 2000,
   userRole = "musician",
   language = "english",
-  containerRef, // External container ref
 }) => {
-  const internalRef = useRef<HTMLDivElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
   const [currentLineIndex, setCurrentLineIndex] = useState(0);
+  const [autoScrollEnabled, setAutoScrollEnabled] = useState(true);
   const showChords = userRole !== "singer";
   const isMobileView = useAppSelector((state) => state.ui.isMobileView);
   const isRTL = language === "hebrew";
 
-  // Use the provided container ref or fallback to internal ref
-  const scrollRef = containerRef || internalRef;
-
-  // Auto-scrolling effect when isPlaying is true
+  // Reset state when song changes or stops
   useEffect(() => {
-    if (!isPlaying || !content || content.length === 0) {
-      // Reset scroll position when song is stopped
-      if (scrollRef.current) {
-        scrollRef.current.scrollTop = 0;
+    if (!isPlaying) {
+      setCurrentLineIndex(0);
+      // Reset scroll position
+      if (containerRef.current) {
+        containerRef.current.scrollTop = 0;
       }
-      return;
+      setAutoScrollEnabled(true);
     }
+  }, [isPlaying, content]);
 
-    // Reset to first line when song changes or starts
-    setCurrentLineIndex(0);
-
-    // Make sure we're at the top when starting
-    if (scrollRef.current) {
-      scrollRef.current.scrollTop = 0;
+  // Auto-scrolling effect when playing
+  useEffect(() => {
+    if (!isPlaying || !content || content.length === 0 || !autoScrollEnabled) {
+      return;
     }
 
     const scrollInterval = setInterval(() => {
       setCurrentLineIndex((prev) => {
-        // Don't exceed the number of lines
         if (prev >= content.length - 1) {
           clearInterval(scrollInterval);
           return prev;
@@ -64,23 +58,59 @@ const LyricsDisplay: React.FC<LyricsDisplayProps> = ({
     }, scrollSpeed);
 
     return () => clearInterval(scrollInterval);
-  }, [content, isPlaying, scrollSpeed, scrollRef]);
+  }, [content, isPlaying, scrollSpeed, autoScrollEnabled]);
 
-  // Scroll to current line
+  // Handle manual scrolling
   useEffect(() => {
-    if (!scrollRef.current || !content) return;
+    const container = containerRef.current;
+    if (!container) return;
 
-    const lineElements = scrollRef.current.querySelectorAll(".lyric-line");
+    let timeout: NodeJS.Timeout | null = null;
+
+    const handleScroll = () => {
+      if (!isPlaying) return;
+
+      setAutoScrollEnabled(false);
+
+      // Re-enable auto-scroll after user stops scrolling for 5 seconds
+      if (timeout) clearTimeout(timeout);
+      timeout = setTimeout(() => {
+        setAutoScrollEnabled(true);
+      }, 5000);
+    };
+
+    container.addEventListener("scroll", handleScroll, { passive: true });
+
+    return () => {
+      container.removeEventListener("scroll", handleScroll);
+      if (timeout) clearTimeout(timeout);
+    };
+  }, [isPlaying]);
+
+  // Scroll to highlighted line
+  useEffect(() => {
+    if (!autoScrollEnabled || !containerRef.current || !content) return;
+
+    const lineElements = containerRef.current.querySelectorAll(".lyric-line");
     if (lineElements[currentLineIndex]) {
       const lineElement = lineElements[currentLineIndex] as HTMLElement;
 
-      // Scroll the current line to center of view
-      lineElement.scrollIntoView({
+      // Get positions for calculation
+      const containerRect = containerRef.current.getBoundingClientRect();
+      const lineRect = lineElement.getBoundingClientRect();
+
+      // Calculate where to scroll
+      const relativePosition = lineRect.top - containerRect.top;
+      const centerPosition =
+        relativePosition - containerRect.height / 2 + lineRect.height / 2;
+
+      // Perform smooth scroll
+      containerRef.current.scrollBy({
+        top: centerPosition,
         behavior: "smooth",
-        block: "center",
       });
     }
-  }, [currentLineIndex, content, scrollRef]);
+  }, [currentLineIndex, content, autoScrollEnabled]);
 
   if (!content || content.length === 0) {
     return (
@@ -95,75 +125,89 @@ const LyricsDisplay: React.FC<LyricsDisplayProps> = ({
 
   return (
     <Box
-      ref={internalRef}
+      ref={containerRef}
       sx={{
         width: "100%",
-        display: "flex",
-        flexDirection: "column",
-        // Don't set height or overflow here - parent container controls that
+        height: "100%",
+        overflowY: "auto",
+        overflowX: "hidden",
+        WebkitOverflowScrolling: "touch", // Better iOS scrolling
+        padding: isMobileView ? 1 : 2,
+        position: "relative",
+        // Disable propagation of scroll events to parent containers on touch devices
+        touchAction: "pan-y", // Allow vertical touch scrolling only
       }}
     >
-      {content.map((line, lineIndex) => (
-        <Box
-          key={`line-${lineIndex}`}
-          className="lyric-line"
-          sx={{
-            display: "flex",
-            flexWrap: "wrap",
-            mb: 3,
-            alignItems: "flex-end",
-            padding: 1,
-            backgroundColor:
-              currentLineIndex === lineIndex
-                ? "rgba(255, 205, 41, 0.1)"
-                : "transparent",
-            borderRadius: 1,
-            transition: "background-color 0.3s ease",
-            direction: isRTL ? "rtl" : "ltr",
-            textAlign: isRTL ? "right" : "left",
-          }}
-        >
-          {line.map((item, itemIndex) => (
-            <Box
-              key={`item-${lineIndex}-${itemIndex}`}
-              sx={{
-                position: "relative",
-                marginRight: isRTL ? 0 : 0.5,
-                marginLeft: isRTL ? 0.5 : 0,
-              }}
-            >
-              {showChords && item.chords && (
-                <Typography
-                  variant="caption"
-                  sx={{
-                    position: "absolute",
-                    top: -16,
-                    [isRTL ? "right" : "left"]: 0,
-                    color: "blue",
-                    fontWeight: "bold",
-                    fontSize: isMobileView ? "0.7rem" : "0.8rem",
-                  }}
-                >
-                  {item.chords}
-                </Typography>
-              )}
-              <Typography
-                variant="body1"
-                component="span"
+      <Box
+        sx={{
+          display: "flex",
+          flexDirection: "column",
+          // Important - prevents content from affecting parent
+          position: "relative",
+        }}
+      >
+        {content.map((line, lineIndex) => (
+          <Box
+            key={`line-${lineIndex}`}
+            className="lyric-line"
+            sx={{
+              display: "flex",
+              flexWrap: "wrap",
+              mb: 3,
+              alignItems: "flex-end",
+              padding: 1,
+              backgroundColor:
+                currentLineIndex === lineIndex
+                  ? "rgba(255, 205, 41, 0.1)"
+                  : "transparent",
+              borderRadius: 1,
+              transition: "background-color 0.3s ease",
+              direction: isRTL ? "rtl" : "ltr",
+              textAlign: isRTL ? "right" : "left",
+            }}
+          >
+            {line.map((item, itemIndex) => (
+              <Box
+                key={`item-${lineIndex}-${itemIndex}`}
                 sx={{
-                  fontWeight: item.chords && showChords ? 500 : 400,
-                  fontSize: isMobileView ? "0.9rem" : "1rem",
+                  position: "relative",
+                  marginRight: isRTL ? 0 : 0.5,
+                  marginLeft: isRTL ? 0.5 : 0,
                 }}
               >
-                {item.lyrics}
-              </Typography>
-            </Box>
-          ))}
-        </Box>
-      ))}
+                {showChords && item.chords && (
+                  <Typography
+                    variant="caption"
+                    sx={{
+                      position: "absolute",
+                      top: -16,
+                      [isRTL ? "right" : "left"]: 0,
+                      color: "blue",
+                      fontWeight: "bold",
+                      fontSize: isMobileView ? "0.7rem" : "0.8rem",
+                    }}
+                  >
+                    {item.chords}
+                  </Typography>
+                )}
+                <Typography
+                  variant="body1"
+                  component="span"
+                  sx={{
+                    fontWeight: item.chords && showChords ? 500 : 400,
+                    fontSize: isMobileView ? "0.9rem" : "1rem",
+                  }}
+                >
+                  {item.lyrics}
+                </Typography>
+              </Box>
+            ))}
+          </Box>
+        ))}
 
-      {/* Add some padding at the bottom for smooth scrolling */}
-      <Box sx={{ height: "50vh" }} />
+        {/* Add extra space at bottom for scrolling */}
+        <Box sx={{ height: "40vh" }} />
+      </Box>
     </Box>
   );
 };

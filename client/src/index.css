@@ -17,3 +17,27 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
+
+html,
+body {
+  overscroll-behavior: none;
+  height: 100%;
+  position: relative;
+}
+
+body.song-playing {
+  overflow: hidden;
+  position: fixed;
+  width: 100%;
+  height: 100%;
+}
+
+.lyrics-scroll-container {
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+}
+
+/* Ensure proper touch handling on mobile devices */
+* {
+  touch-action: manipulation;
+}

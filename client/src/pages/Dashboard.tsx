@@ -4,7 +4,11 @@ import { PlayArrow, Pause } from "@mui/icons-material";
 import { useNavigate } from "react-router-dom";
 import { useAppDispatch, useAppSelector } from "../store/hooks";
 import { logout } from "../store/slices/authSlice";
-import { selectSong, clearSelectedSong } from "../store/slices/songSlice";
+import {
+  selectSong,
+  clearSelectedSong,
+  togglePlaying,
+} from "../store/slices/songSlice";
 import { socketService, SongSelection } from "../services/socket";
 import LyricsDisplay from "../components/LyricsDisplay";
 import musicNotes from "../assets/music-note.png";
@@ -21,13 +25,12 @@ const Dashboard: React.FC = () => {
   const navigate = useNavigate();
   const dispatch = useAppDispatch();
   const { user } = useAppSelector((state) => state.auth);
-  const { selectedSong } = useAppSelector((state) => state.song);
+  const { selectedSong, isPlaying } = useAppSelector((state) => state.song);
   const [localSelectedSong, setLocalSelectedSong] =
     useState<SongSelection | null>(selectedSong);
   const [socketConnected, setSocketConnected] = useState(false);
-  const [isPlaying, setIsPlaying] = useState(false);
   const isMobileView = useAppSelector((state) => state.ui.isMobileView);
-  const lyricsContainerRef = useRef<HTMLDivElement>(null);
+  const dashboardRef = useRef<HTMLDivElement>(null);
 
   // Determine if the song lyrics are in Hebrew
   const songLanguage = localSelectedSong?.content?.some((line) =>
@@ -57,12 +60,9 @@ const Dashboard: React.FC = () => {
         // Handle stop song command
         dispatch(clearSelectedSong());
         setLocalSelectedSong(null);
-        setIsPlaying(false);
       } else {
         dispatch(selectSong(song));
         setLocalSelectedSong(song);
-        // Auto-start playing when a new song is selected
-        setIsPlaying(true);
       }
     };
 
@@ -80,13 +80,22 @@ const Dashboard: React.FC = () => {
     setLocalSelectedSong(selectedSong);
   }, [selectedSong]);
 
-  const togglePlay = () => {
-    const newPlayingState = !isPlaying;
-    setIsPlaying(newPlayingState);
+  // Handle play/pause toggle
+  const handleTogglePlay = () => {
+    // Use the togglePlaying action from Redux
+    dispatch(togglePlaying());
 
-    // Reset scroll position when stopping the song
-    if (!newPlayingState && lyricsContainerRef.current) {
-      lyricsContainerRef.current.scrollTop = 0;
+    // When stopping, ensure we get back to the top
+    if (isPlaying && dashboardRef.current) {
+      // Delay scroll reset to allow animation to complete
+      setTimeout(() => {
+        window.scrollTo(0, 0);
+
+        // Also scroll the dashboard element itself
+        if (dashboardRef.current) {
+          dashboardRef.current.scrollTop = 0;
+        }
+      }, 100);
     }
   };
 
@@ -96,6 +105,7 @@ const Dashboard: React.FC = () => {
 
   return (
     <Box
+      ref={dashboardRef}
       sx={{
         minHeight: "100vh",
         backgroundColor: "#f5f5f5",
@@ -128,7 +138,7 @@ const Dashboard: React.FC = () => {
           display: "flex",
           flexDirection: "column",
           padding: isMobileView ? "0.5em 1em 1em 1em" : "1em 2em 2em 2em",
-          height: "calc(100vh - 80px)",
+          height: isMobileView ? "calc(100vh - 80px)" : "auto",
         }}
       >
         <Paper
@@ -159,6 +169,8 @@ const Dashboard: React.FC = () => {
                   flexDirection: isMobileView ? "column" : "row",
                   background: "#f9f9f9",
                   zIndex: 5,
+                  position: "sticky",
+                  top: 0,
                 }}
               >
                 <Box
@@ -190,7 +202,7 @@ const Dashboard: React.FC = () => {
                 <Button
                   variant="contained"
                   startIcon={isPlaying ? <Pause /> : <PlayArrow />}
-                  onClick={togglePlay}
+                  onClick={handleTogglePlay}
                   size={isMobileView ? "small" : "medium"}
                   sx={{
                     bgcolor: isPlaying ? "#e0e0e0" : "#FFCD29",
@@ -213,7 +225,7 @@ const Dashboard: React.FC = () => {
                 }}
               >
                 <Box
-                  ref={lyricsContainerRef}
+                  className="lyrics-scroll-container"
                   sx={{
                     width: "100%",
                     height: "100%",
@@ -224,17 +236,16 @@ const Dashboard: React.FC = () => {
                     backgroundColor: "#fff",
                     display: "flex",
                     flexDirection: "column",
-                    overflow: "auto",
+                    position: "relative",
+                    overflow: "hidden",
                   }}
                 >
-                  {/* Only the content of the lyrics will scroll */}
                   <LyricsDisplay
                     content={localSelectedSong.content}
                     isPlaying={isPlaying}
                     scrollSpeed={localSelectedSong.scrollSpeed ?? 2000}
                     userRole={userRole}
                     language={songLanguage}
-                    containerRef={lyricsContainerRef}
                   />
                 </Box>
               </Box>

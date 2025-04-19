@@ -21,6 +21,7 @@ export interface SongSelection {
 interface SongState {
   availableSongs: SongSelection[];
   selectedSong: SongSelection | null;
+  isPlaying: boolean; // Add isPlaying to the state
 }
 
 // The initial state with your two available songs
@@ -48,6 +49,7 @@ const initialState: SongState = {
     },
   ],
   selectedSong: null,
+  isPlaying: false, // Initialize as not playing
 };
 
 export const songSlice = createSlice({
@@ -56,15 +58,32 @@ export const songSlice = createSlice({
   reducers: {
     selectSong: (state, action: PayloadAction<SongSelection>) => {
       state.selectedSong = action.payload;
+      // Auto-start playing when a song is selected (optional)
+      state.isPlaying = true;
     },
     clearSelectedSong: (state) => {
       state.selectedSong = null;
+      state.isPlaying = false;
     },
     addSong: (state, action: PayloadAction<SongSelection>) => {
       state.availableSongs.push(action.payload);
     },
+    // Add these new action creators for play control
+    setPlaying: (state, action: PayloadAction<boolean>) => {
+      state.isPlaying = action.payload;
+    },
+    togglePlaying: (state) => {
+      state.isPlaying = !state.isPlaying;
+    },
   },
 });
 
-export const { selectSong, clearSelectedSong, addSong } = songSlice.actions;
+export const {
+  selectSong,
+  clearSelectedSong,
+  addSong,
+  setPlaying,
+  togglePlaying,
+} = songSlice.actions;
+
 export default songSlice.reducer;
