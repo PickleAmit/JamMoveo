@@ -28,7 +28,7 @@ import { useAppDispatch, useAppSelector } from "../store/hooks";
 import { logout } from "../store/slices/authSlice";
 import { clearSelectedSong, selectSong } from "../store/slices/songSlice";
 import { socketService, SongSelection } from "../services/socket";
-import DashboardHeader from "../components/dashboardHeader";
+import DashboardHeader from "../components/DashboardHeader";
 import hotelCalifornia from "../assets/hotel_california.jpg";
 import hey_jude from "../assets/hey_jude_img.jpg";
 import veech_shelo from "../assets/veech_shelo.jpg";
