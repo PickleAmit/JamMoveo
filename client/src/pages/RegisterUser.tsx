@@ -146,10 +146,7 @@ const Register: React.FC = () => {
 
   return (
     <AuthLayout>
-      <AuthHeader
-        title="Register"
-        subtitle="Create your account to join our musical community"
-      />
+      <AuthHeader title="Register" subtitle="" />
 
       {registrationSuccess && (
         <Alert
