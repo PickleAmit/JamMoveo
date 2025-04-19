@@ -12,31 +12,40 @@ interface LyricsDisplayProps {
   content?: LyricChordItem[][];
   isPlaying?: boolean;
   scrollSpeed?: number;
-  userRole?: string; // Add role to hide chords for singers
-  language?: "hebrew" | "english"; // Add language support
+  userRole?: string;
+  language?: "hebrew" | "english";
 }
 
 const LyricsDisplay: React.FC<LyricsDisplayProps> = ({
   content,
   isPlaying = false,
   scrollSpeed = 2000,
-  userRole = "musician", // Default to musician which shows chords
-  language = "english", // Default to English
+  userRole = "musician",
+  language = "english",
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const [currentLineIndex, setCurrentLineIndex] = useState(0);
-  const showChords = userRole !== "singer"; // Hide chords for singers
+  const showChords = userRole !== "singer";
   const isMobileView = useAppSelector((state) => state.ui.isMobileView);
-
-  // Determine text direction based on language
   const isRTL = language === "hebrew";
 
   // Auto-scrolling effect when isPlaying is true
   useEffect(() => {
-    if (!isPlaying || !content || content.length === 0) return;
+    if (!isPlaying || !content || content.length === 0) {
+      // Reset position when stopping
+      if (containerRef.current) {
+        containerRef.current.scrollTop = 0;
+      }
+      return;
+    }
 
     // Reset to first line when song changes or starts
     setCurrentLineIndex(0);
+
+    // Reset scroll position to top when starting
+    if (containerRef.current) {
+      containerRef.current.scrollTop = 0;
+    }
 
     const scrollInterval = setInterval(() => {
       setCurrentLineIndex((prev) => {
@@ -52,17 +61,49 @@ const LyricsDisplay: React.FC<LyricsDisplayProps> = ({
     return () => clearInterval(scrollInterval);
   }, [content, isPlaying, scrollSpeed]);
 
+  // Scroll to current line - modified to be more controlled
   useEffect(() => {
     if (!containerRef.current || !content) return;
 
     const lineElements = containerRef.current.querySelectorAll(".lyric-line");
     if (lineElements[currentLineIndex]) {
-      lineElements[currentLineIndex].scrollIntoView({
+      // Use scrollIntoView with specific offset for better control
+      const lineElement = lineElements[currentLineIndex] as HTMLElement;
+      const containerTop = containerRef.current.getBoundingClientRect().top;
+      const lineTop = lineElement.getBoundingClientRect().top;
+
+      // Calculate offset to position line in the middle of the container
+      const offset =
+        lineTop - containerTop - containerRef.current.clientHeight / 3;
+
+      // Smooth scroll with controlled behavior
+      containerRef.current.scrollBy({
+        top: offset,
         behavior: "smooth",
-        block: "center",
       });
     }
   }, [currentLineIndex, content]);
+
+  // Add manual scroll handler to disable auto-scroll when user manually scrolls
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+
+    const handleManualScroll = () => {
+      if (isPlaying) {
+        // If user manually scrolls while playing, we could add logic here
+        // For example, we could stop auto-scrolling or note the user preference
+      }
+    };
+
+    container.addEventListener("wheel", handleManualScroll);
+    container.addEventListener("touchmove", handleManualScroll);
+
+    return () => {
+      container.removeEventListener("wheel", handleManualScroll);
+      container.removeEventListener("touchmove", handleManualScroll);
+    };
+  }, [isPlaying]);
 
   if (!content || content.length === 0) {
     return (
@@ -82,9 +123,13 @@ const LyricsDisplay: React.FC<LyricsDisplayProps> = ({
         width: "100%",
         height: "100%",
         overflowY: "auto",
+        overflowX: "hidden",
+        WebkitOverflowScrolling: "touch", // Smooth scrolling on iOS
         padding: isMobileView ? 1 : 2,
         display: "flex",
         flexDirection: "column",
+        position: "relative", // Important for scroll containment
+        flex: 1,
       }}
     >
       {content.map((line, lineIndex) => (
@@ -146,7 +191,8 @@ const LyricsDisplay: React.FC<LyricsDisplayProps> = ({
         </Box>
       ))}
 
-      <Box sx={{ height: "30vh" }} />
+      {/* Add some padding at the bottom for better scrolling */}
+      <Box sx={{ height: isMobileView ? "40vh" : "20vh" }} />
     </Box>
   );
 };

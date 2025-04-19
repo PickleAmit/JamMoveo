@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { Box, Typography, Paper, Alert, Button } from "@mui/material";
 import { PlayArrow, Pause } from "@mui/icons-material";
 import { useNavigate } from "react-router-dom";
@@ -27,6 +27,7 @@ const Dashboard: React.FC = () => {
   const [socketConnected, setSocketConnected] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
   const isMobileView = useAppSelector((state) => state.ui.isMobileView);
+  const contentRef = useRef<HTMLDivElement>(null);
 
   // Determine if the song lyrics are in Hebrew
   const songLanguage = localSelectedSong?.content?.some((line) =>
@@ -62,6 +63,11 @@ const Dashboard: React.FC = () => {
         setLocalSelectedSong(song);
         // Auto-start playing when a new song is selected
         setIsPlaying(true);
+
+        // Scroll to top when new song is selected
+        if (contentRef.current) {
+          contentRef.current.scrollTop = 0;
+        }
       }
     };
 
@@ -81,6 +87,11 @@ const Dashboard: React.FC = () => {
 
   const togglePlay = () => {
     setIsPlaying(!isPlaying);
+
+    // When stopping, scroll back to top
+    if (isPlaying && contentRef.current) {
+      contentRef.current.scrollTop = 0;
+    }
   };
 
   // Get user role (singer or musician)
@@ -95,11 +106,15 @@ const Dashboard: React.FC = () => {
         flexDirection: "column",
         backgroundColor: "#f5f5f5",
         fontFamily: "Exo, sans-serif",
-        overflow: "hidden",
+        position: "fixed",
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
       }}
     >
-      {/* Fixed header that stays at the top */}
-      <Box sx={{ flexShrink: 0 }}>
+      {/* Fixed header section */}
+      <Box sx={{ position: "sticky", top: 0, zIndex: 1000, flexShrink: 0 }}>
         <DashboardHeader
           handleLogout={handleLogout}
           socketConnected={socketConnected}
@@ -119,14 +134,17 @@ const Dashboard: React.FC = () => {
         )}
       </Box>
 
-      {/* Content area that scrolls independently */}
+      {/* Content area */}
       <Box
+        ref={contentRef}
         sx={{
           flex: 1,
+          overflowY: "auto",
+          overflowX: "hidden",
+          WebkitOverflowScrolling: "touch",
+          padding: isMobileView ? "0.5em 1em 1em 1em" : "1em 2em 2em 2em",
           display: "flex",
           flexDirection: "column",
-          padding: isMobileView ? "0.5em 1em 1em 1em" : "1em 2em 2em 2em",
-          overflow: "hidden", // Content box won't scroll
         }}
       >
         <Paper
@@ -134,19 +152,18 @@ const Dashboard: React.FC = () => {
           sx={{
             borderRadius: "1em",
             width: "100%",
-            height: "100%",
             bgcolor: "#f9f9f9",
             border: localSelectedSong ? "2px solid black" : "2px dashed black",
             transition: "all 0.3s ease",
             display: "flex",
             flexDirection: "column",
-            overflow: "hidden",
-            maxHeight: "88dvh",
+            height: "auto",
+            minHeight: isMobileView ? "88vh" : "80vh",
           }}
         >
           {localSelectedSong ? (
             <>
-              {/* Song header - fixed */}
+              {/* Song header section */}
               <Box
                 sx={{
                   display: "flex",
@@ -155,7 +172,10 @@ const Dashboard: React.FC = () => {
                   p: isMobileView ? 1 : 2,
                   borderBottom: "1px solid #e0e0e0",
                   flexDirection: isMobileView ? "column" : "row",
-                  flexShrink: 0,
+                  position: "sticky",
+                  top: 0,
+                  backgroundColor: "#f9f9f9",
+                  zIndex: 10,
                 }}
               >
                 <Box
@@ -201,19 +221,18 @@ const Dashboard: React.FC = () => {
                 </Button>
               </Box>
 
-              {/* Content area - scrollable */}
+              {/* Lyrics content section */}
               <Box
                 sx={{
                   flex: 1,
                   display: "flex",
-                  overflow: "hidden",
                   p: isMobileView ? 1 : 2,
+                  overflow: "visible",
                 }}
               >
                 <Box
                   sx={{
                     width: "100%",
-                    height: "100%",
                     textAlign: "left",
                     border: "1px solid #e0e0e0",
                     borderRadius: "0.5em",
@@ -221,10 +240,9 @@ const Dashboard: React.FC = () => {
                     backgroundColor: "#fff",
                     display: "flex",
                     flexDirection: "column",
-                    overflow: "hidden",
                   }}
                 >
-                  {/* LyricsDisplay component will handle internal scrolling */}
+                  {/* LyricsDisplay no longer handles auto-scrolling of page */}
                   <LyricsDisplay
                     content={localSelectedSong.content}
                     isPlaying={isPlaying}
@@ -272,6 +290,9 @@ const Dashboard: React.FC = () => {
             </Box>
           )}
         </Paper>
+
+        {/* Add bottom padding to ensure we can scroll past the end of content */}
+        <Box sx={{ height: "30px" }} />
       </Box>
     </Box>
   );

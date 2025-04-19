@@ -194,6 +194,7 @@ const CurrentlyPlayingBar = ({
   socketConnected: boolean;
   onStopSong: () => void;
 }) => {
+  const isMobileView = useAppSelector((state) => state.ui.isMobileView);
   return (
     <Paper
       elevation={3}
@@ -213,6 +214,7 @@ const CurrentlyPlayingBar = ({
           sx={{
             fontWeight: 600,
             direction: "ltr",
+            fontSize: isMobileView ? "1rem" : "1.5rem",
           }}
         >
           Currently Playing:
@@ -221,6 +223,7 @@ const CurrentlyPlayingBar = ({
           variant="body1"
           sx={{
             direction: "ltr",
+            fontSize: isMobileView ? "0.8rem" : "1rem",
           }}
         >
           {selectedSong.title} by {selectedSong.artist}
@@ -232,6 +235,8 @@ const CurrentlyPlayingBar = ({
         startIcon={<Stop />}
         onClick={onStopSong}
         disabled={!socketConnected}
+        sx={{ fontSize: isMobileView ? "0.6rem" : "0.8rem" }}
+        size="small"
       >
         Stop Song
       </Button>
