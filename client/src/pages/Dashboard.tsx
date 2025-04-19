@@ -90,38 +90,43 @@ const Dashboard: React.FC = () => {
   return (
     <Box
       sx={{
-        minHeight: "100vh",
-        backgroundColor: "#f5f5f5",
-        fontFamily: "Exo, sans-serif",
+        height: "100vh",
         display: "flex",
         flexDirection: "column",
+        backgroundColor: "#f5f5f5",
+        fontFamily: "Exo, sans-serif",
+        overflow: "hidden",
       }}
     >
-      <DashboardHeader
-        handleLogout={handleLogout}
-        socketConnected={socketConnected}
-      />
+      {/* Fixed header that stays at the top */}
+      <Box sx={{ flexShrink: 0 }}>
+        <DashboardHeader
+          handleLogout={handleLogout}
+          socketConnected={socketConnected}
+        />
 
-      {!socketConnected && (
-        <Alert
-          severity="warning"
-          sx={{
-            margin: isMobileView ? "0.5em 1em 0 1em" : "1em 2em 0 2em",
-            borderRadius: "0.5em",
-          }}
-        >
-          You are currently offline. You won't receive song updates until your
-          connection is restored.
-        </Alert>
-      )}
+        {!socketConnected && (
+          <Alert
+            severity="warning"
+            sx={{
+              margin: isMobileView ? "0.5em 1em 0 1em" : "1em 2em 0 2em",
+              borderRadius: "0.5em",
+            }}
+          >
+            You are currently offline. You won't receive song updates until your
+            connection is restored.
+          </Alert>
+        )}
+      </Box>
 
+      {/* Content area that scrolls independently */}
       <Box
         sx={{
           flex: 1,
           display: "flex",
           flexDirection: "column",
           padding: isMobileView ? "0.5em 1em 1em 1em" : "1em 2em 2em 2em",
-          height: "calc(100vh - 80px)",
+          overflow: "hidden", // Content box won't scroll
         }}
       >
         <Paper
@@ -134,14 +139,14 @@ const Dashboard: React.FC = () => {
             border: localSelectedSong ? "2px solid black" : "2px dashed black",
             transition: "all 0.3s ease",
             display: "flex",
-            flex: 1,
-            maxHeight: "88dvh",
             flexDirection: "column",
             overflow: "hidden",
+            maxHeight: "88dvh",
           }}
         >
           {localSelectedSong ? (
             <>
+              {/* Song header - fixed */}
               <Box
                 sx={{
                   display: "flex",
@@ -150,6 +155,7 @@ const Dashboard: React.FC = () => {
                   p: isMobileView ? 1 : 2,
                   borderBottom: "1px solid #e0e0e0",
                   flexDirection: isMobileView ? "column" : "row",
+                  flexShrink: 0,
                 }}
               >
                 <Box
@@ -195,6 +201,7 @@ const Dashboard: React.FC = () => {
                 </Button>
               </Box>
 
+              {/* Content area - scrollable */}
               <Box
                 sx={{
                   flex: 1,
@@ -214,8 +221,10 @@ const Dashboard: React.FC = () => {
                     backgroundColor: "#fff",
                     display: "flex",
                     flexDirection: "column",
+                    overflow: "hidden",
                   }}
                 >
+                  {/* LyricsDisplay component will handle internal scrolling */}
                   <LyricsDisplay
                     content={localSelectedSong.content}
                     isPlaying={isPlaying}

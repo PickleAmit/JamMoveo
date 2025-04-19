@@ -52,7 +52,6 @@ const LyricsDisplay: React.FC<LyricsDisplayProps> = ({
     return () => clearInterval(scrollInterval);
   }, [content, isPlaying, scrollSpeed]);
 
-  // Scroll to current line
   useEffect(() => {
     if (!containerRef.current || !content) return;
 
@@ -81,7 +80,7 @@ const LyricsDisplay: React.FC<LyricsDisplayProps> = ({
       ref={containerRef}
       sx={{
         width: "100%",
-        height: "100%", // Use full height
+        height: "100%",
         overflowY: "auto",
         padding: isMobileView ? 1 : 2,
         display: "flex",
@@ -104,8 +103,8 @@ const LyricsDisplay: React.FC<LyricsDisplayProps> = ({
                 : "transparent",
             borderRadius: 1,
             transition: "background-color 0.3s ease",
-            direction: isRTL ? "rtl" : "ltr", // Set text direction based on language
-            textAlign: isRTL ? "right" : "left", // Align text based on direction
+            direction: isRTL ? "rtl" : "ltr",
+            textAlign: isRTL ? "right" : "left",
           }}
         >
           {line.map((item, itemIndex) => (
@@ -123,7 +122,7 @@ const LyricsDisplay: React.FC<LyricsDisplayProps> = ({
                   sx={{
                     position: "absolute",
                     top: -16,
-                    [isRTL ? "right" : "left"]: 0, // Position chords based on text direction
+                    [isRTL ? "right" : "left"]: 0,
                     color: "blue",
                     fontWeight: "bold",
                     fontSize: isMobileView ? "0.7rem" : "0.8rem",
@@ -146,6 +145,8 @@ const LyricsDisplay: React.FC<LyricsDisplayProps> = ({
           ))}
         </Box>
       ))}
+
+      <Box sx={{ height: "30vh" }} />
     </Box>
   );
 };
