@@ -29,10 +29,10 @@ const AuthLayout: React.FC<AuthLayoutProps> = ({ children }) => {
           alt="JamMoveo logo"
           sx={{
             position: "absolute",
-            top: 20,
-            left: 20,
+            top: "5%",
+            left: "5%",
             width: "40dvw",
-            height: "6dvh",
+            height: "5dvh",
             zIndex: 10,
             filter: "brightness(0)",
           }}
@@ -46,7 +46,6 @@ const AuthLayout: React.FC<AuthLayoutProps> = ({ children }) => {
           alignItems: "center",
           justifyContent: "center",
           bgcolor: "#fff",
-          pt: isMobileView ? 6 : 0,
           width: "100%",
         }}
       >
